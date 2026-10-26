@@ -38,7 +38,8 @@
   .body{padding:12px 14px 14px;display:flex;flex-direction:column;gap:4px}
   .title{font-weight:700;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .row{display:flex;align-items:center;justify-content:space-between;gap:8px}
-  .author{color:var(--sub);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .author{color:var(--sub);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .body .row .title{min-width:0}
   .heart{border:0;background:#fff3f6;color:var(--heart);border-radius:999px;padding:5px 11px;font-weight:700;cursor:pointer;
     display:flex;align-items:center;gap:4px;font-size:14px;flex-shrink:0;transition:transform .1s}
   .heart:active{transform:scale(1.2)}
@@ -53,6 +54,14 @@
   .badge{position:absolute;top:10px;right:10px;background:var(--pri);color:#fff;font-weight:800;font-size:12px;padding:3px 9px;border-radius:999px;display:none}
   body.admin .badge{display:block}
   body.admin .del{top:auto;bottom:auto;right:auto;left:8px;top:36px}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+  .chips button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 14px;font-weight:600;font-size:14px;cursor:pointer;color:var(--sub)}
+  .chips button.on{background:var(--ink);border-color:var(--ink);color:#fff}
+  .chips button small{opacity:.7;margin-left:3px}
+  .sheet select{width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:12px;background:#fafafe;outline:none}
+  .sheet select:disabled,.sheet input:disabled{background:#f0eff5;color:#555}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .meta-s{color:var(--pri);font-weight:600}
   .admin-only{display:none}
   body.admin .admin-only{display:inline-flex}
   .btn.danger{background:#fff;color:#d33;border:1px solid #f3c2c2;box-shadow:none;margin-right:auto}
@@ -63,7 +72,7 @@
   .empty{text-align:center;color:var(--sub);padding:60px 0;grid-column:1/-1}
 
   /* 모달 */
-  .modal{position:fixed;inset:0;background:rgba(20,16,40,.55);display:none;z-index:20;align-items:center;justify-content:center;padding:16px}
+  .modal{position:fixed;inset:0;background:rgba(20,16,40,.55);display:none;z-index:40;align-items:center;justify-content:center;padding:16px}
   .modal.show{display:flex}
   .sheet{background:#fff;border-radius:20px;width:100%;max-width:480px;max-height:92vh;overflow:auto;padding:22px}
   .sheet h2{margin:0 0 14px;font-size:20px}
@@ -104,9 +113,10 @@
 <header>
   <div class="bar">
     <div class="logo">✨ <span>바이브코딩 갤러리</span> <small class="count" id="count"></small></div>
-    <input class="search" id="q" type="text" placeholder="작품 이름·만든 사람 검색">
+    <input class="search" id="q" type="text" placeholder="작품·학교·학번·이름 검색">
     <div class="seg" id="sort">
       <button data-s="new" class="on">최신순</button>
+      <button data-s="hak">학교·학번순</button>
       <button data-s="like">인기순</button>
     </div>
     <button class="icon-btn" id="refresh" title="새로고침">↻</button>
@@ -116,7 +126,10 @@
   </div>
 </header>
 
-<main><div class="grid" id="grid"></div></main>
+<main>
+  <div class="chips" id="schoolChips"></div>
+  <div class="grid" id="grid"></div>
+</main>
 
 <!-- 업로드 -->
 <div class="modal" id="upModal">
@@ -124,8 +137,20 @@
     <h2>🚀 내 작품 올리기</h2>
     <label>작품 이름 *</label>
     <input type="text" id="fTitle" maxlength="60" placeholder="예) 우주 피하기 게임">
-    <label>만든 사람 *</label>
-    <input type="text" id="fAuthor" maxlength="30" placeholder="예) 3학년 2반 김민준">
+    <label>학교 *</label>
+    <select id="fSchool"></select>
+    <div class="hint" id="fSchoolLock"></div>
+    <div class="two">
+      <div>
+        <label>학번 * <span class="hint">(5자리)</span></label>
+        <input type="text" id="fHak" inputmode="numeric" maxlength="5" placeholder="예) 20315">
+      </div>
+      <div>
+        <label>이름 *</label>
+        <input type="text" id="fName" maxlength="20" placeholder="예) 김민준">
+      </div>
+    </div>
+    <div class="hint" id="fHakHint">2학년 3반 15번 → 20315 · 올린 뒤에는 학교와 학번을 바꿀 수 없어요</div>
     <label>한 줄 설명 <span class="hint">(선택)</span></label>
     <textarea id="fDesc" maxlength="300" placeholder="어떤 프로그램인지, 무엇을 의도했는지 적어 주세요"></textarea>
     <label>HTML 작품 *</label>
@@ -166,8 +191,13 @@
     <div id="edStep2" style="display:none">
       <label>작품 이름 *</label>
       <input type="text" id="eTitle" maxlength="60">
-      <label>만든 사람 *</label>
-      <input type="text" id="eAuthor" maxlength="30">
+      <label>학교 · 학번 <span class="hint" id="eLockHint">(바꿀 수 없어요)</span></label>
+      <div class="two">
+        <select id="eSchool" disabled></select>
+        <input type="text" id="eHak" inputmode="numeric" maxlength="5" disabled>
+      </div>
+      <label>이름 *</label>
+      <input type="text" id="eName" maxlength="20">
       <label>한 줄 설명</label>
       <textarea id="eDesc" maxlength="300"></textarea>
       <label>HTML 바꾸기 <span class="hint">(그대로 두려면 비워 두세요)</span></label>
@@ -194,6 +224,10 @@
       <label>새 비밀번호 (4자 이상)</label>
       <input type="password" id="adNew">
       <button class="btn ghost" id="adChange" style="margin-top:8px">변경</button>
+    </details>
+    <details style="margin-top:12px"><summary class="hint">학교 전용 링크</summary>
+      <p class="hint" style="line-height:1.7">주소 끝에 붙이면 학교가 고정돼요. <b>&amp;c=3</b>을 더 붙이면 3반 학번만 받아요.<br>
+        …/vibe-gallery/<b>?s=장성중학교</b><br>…/vibe-gallery/<b>?s=장성황룡중학교</b><br>…/vibe-gallery/<b>?s=장성삼서중학교</b></p>
     </details>
     <div class="msg" id="adMsg"></div>
     <div class="actions">
@@ -226,14 +260,51 @@ const SB_KEY = "sb_publishable_XuCCXqn_RAYYbEG9Ua33XA_-opIYotq";
 const sb = supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: false } });
 
 const MAX_SIZE = 3000000;          // 약 3MB
-const CACHE_KEY = "vg_list_v1";
+const CACHE_KEY = "vg_list_v2";
 const LIKE_KEY = "vg_likes_v1";
 const $ = s => document.querySelector(s);
 
 let works = [], sortBy = "new", query = "", adminPw = null, current = null;
 let scores = new Map();            // 선생님 모드에서만 채워짐
 const SCORE_SET = [30, 22, 14, 6];
-const COLS = "id,title,author,description,likes,created_at,updated_at";
+const COLS = "id,title,school,hakbun,name,author,description,likes,created_at,updated_at";
+
+// ---------- 학교 · 학번 ----------
+const SCHOOLS = ["장성중학교", "장성황룡중학교", "장성삼서중학교"];
+const SHORT = { "장성중학교":"장성중", "장성황룡중학교":"황룡중", "장성삼서중학교":"삼서중" };
+// 주소 끝에 ?s=학교이름 (또는 #s=학교이름) → 그 학교로 고정 · ?c=3 → 3반 전용
+const BOOT = (() => {
+  const b = {};
+  try{
+    const q = new URLSearchParams(location.search);
+    let s = q.get("s");
+    if(!s){ const m = /^#s=(.+)$/.exec(location.hash); if(m) s = decodeURIComponent(m[1]); }
+    if(s){
+      s = s.replace(/\+/g, " ").trim();
+      b.school = SCHOOLS.find(x => x === s || SHORT[x] === s || x.replace("학교","") === s) || "";
+    }
+    const c = parseInt(String(q.get("c") || "").replace(/\D/g, ""), 10);
+    if(c >= 1 && c <= 99) b.ban = c;
+  }catch(e){}
+  return b;
+})();
+// 학번 5자리 → 학년(1) · 반(2) · 번호(2). 예: 20315 → 2학년 3반 15번
+function parseHak(v){
+  const d = String(v || "").replace(/\D/g, "");
+  if(d.length !== 5) return null;
+  const g = +d[0], b = +d.slice(1,3), n = +d.slice(3);
+  return g >= 1 && b >= 1 && n >= 1 ? { grade:g, ban:b, num:n, code:d } : null;
+}
+const whoOf = w => w.name || w.author || "";
+function metaHtml(w){
+  const parts = [];
+  if(w.school) parts.push(`<span class="meta-s">${esc(SHORT[w.school] || w.school)}</span>`);
+  if(w.hakbun) parts.push(esc(w.hakbun));
+  parts.push(esc(whoOf(w)));
+  return parts.join(" · ");
+}
+const metaText = w => [w.school ? (SHORT[w.school] || w.school) : "", w.hakbun || "", whoOf(w)].filter(Boolean).join(" · ");
+let schoolFilter = BOOT.school || "";
 const htmlCache = new Map();
 
 // ---------- 저장소(브라우저) ----------
@@ -263,11 +334,21 @@ function esc(s){ return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","
 function skeleton(){
   $("#grid").innerHTML = Array.from({length:8}).map(()=>`<div class="card skel"><div class="cover"></div><div class="body"><div class="title"></div><div class="author"></div></div></div>`).join("");
 }
+function renderChips(){
+  const cnt = s => works.filter(w => !s || w.school === s).length;
+  $("#schoolChips").innerHTML = ["", ...SCHOOLS].map(s =>
+    `<button data-school="${s}" class="${schoolFilter === s ? "on" : ""}">${s || "전체"}<small>${cnt(s)}</small></button>`).join("");
+}
 function render(){
-  let list = works.filter(w => !query || (w.title + " " + w.author).toLowerCase().includes(query));
-  list.sort(sortBy === "like"
-    ? (a,b) => b.likes - a.likes || b.id - a.id
-    : (a,b) => b.id - a.id);
+  renderChips();
+  let list = works.filter(w =>
+    (!schoolFilter || w.school === schoolFilter) &&
+    (!query || [w.title, w.school, SHORT[w.school], w.hakbun, whoOf(w)].join(" ").toLowerCase().includes(query)));
+  const si = s => { const i = SCHOOLS.indexOf(s); return i < 0 ? 99 : i; };
+  list.sort(
+    sortBy === "like" ? (a,b) => b.likes - a.likes || b.id - a.id :
+    sortBy === "hak"  ? (a,b) => si(a.school) - si(b.school) || String(a.hakbun || "99999").localeCompare(String(b.hakbun || "99999")) || a.id - b.id :
+                        (a,b) => b.id - a.id);
   $("#count").textContent = !works.length ? "" :
     adminPw ? `· ${works.length}개 · 평가 ${works.filter(w => scores.has(w.id)).length}/${works.length}` : `· ${works.length}개`;
   if(!list.length){
@@ -276,7 +357,7 @@ function render(){
   }
   const dayAgo = Date.now() - 864e5;
   $("#grid").innerHTML = list.map(w => {
-    const g = GRAD[hash(w.author + w.id) % GRAD.length];
+    const g = GRAD[hash(whoOf(w) + w.id) % GRAD.length];
     const on = liked.has(w.id);
     const isNew = new Date(w.created_at).getTime() > dayAgo;
     const sc = scores.get(w.id);
@@ -284,11 +365,11 @@ function render(){
       <div class="cover" style="background:linear-gradient(135deg,${g[0]},${g[1]})">${isNew ? '<span class="new">NEW</span>' : ""}${sc ? `<span class="badge">${sc}점</span>` : ""}${pickEmoji(w)}</div>
       <button class="del" data-del="${w.id}">삭제</button>
       <div class="body">
-        <div class="title" title="${esc(w.title)}">${esc(w.title)}</div>
         <div class="row">
-          <div class="author">${esc(w.author)}</div>
+          <div class="title" title="${esc(w.title)}">${esc(w.title)}</div>
           <button class="heart ${on ? "" : "off"}" data-like="${w.id}"><span class="h">${on ? "♥" : "♡"}</span>${w.likes}</button>
         </div>
+        <div class="author" title="${esc(metaText(w))}">${metaHtml(w)}</div>
         <div class="scores">${SCORE_SET.map(s => `<button data-score="${s}" data-sid="${w.id}" class="${sc === s ? "on" : ""}">${s}</button>`).join("")}</div>
       </div>
     </div>`;
@@ -321,7 +402,7 @@ async function openWork(id){
   const w = works.find(x => x.id === id); if(!w) return;
   current = w;
   $("#vTitle").textContent = w.title;
-  $("#vAuthor").textContent = w.author;
+  $("#vAuthor").textContent = metaText(w);
   $("#vDesc").textContent = w.description || "";
   $("#vDesc").style.display = w.description ? "block" : "none";
   paintViewerHeart();
@@ -363,7 +444,13 @@ document.querySelectorAll(".modal").forEach(m => m.addEventListener("click", e =
 
 $("#upBtn").onclick = () => {
   $("#upMsg").textContent = "";
-  try{ $("#fAuthor").value = localStorage.getItem("vg_author") || ""; }catch(e){}
+  const me = store.get("vg_me", {});
+  $("#fSchool").innerHTML = `<option value="">학교 선택</option>` + SCHOOLS.map(s => `<option>${s}</option>`).join("");
+  $("#fSchool").value = BOOT.school || (SCHOOLS.includes(me.school) ? me.school : "");
+  $("#fSchool").disabled = !!BOOT.school;
+  $("#fSchoolLock").textContent = BOOT.school ? "🔒 이 링크는 " + BOOT.school + " 전용이에요" : "";
+  $("#fHak").value = me.hak || ""; $("#fName").value = me.name || "";
+  hakHint();
   openModal("#upModal");
 };
 document.querySelectorAll(".tabs button").forEach(b => b.onclick = () => {
@@ -389,25 +476,37 @@ function readFile(f){
   };
   r.readAsText(f, "utf-8");
 }
+function hakHint(){
+  const v = $("#fHak").value, p = parseHak(v);
+  $("#fHakHint").textContent = p
+    ? `✅ ${p.grade}학년 ${p.ban}반 ${p.num}번` + (BOOT.ban && p.ban !== BOOT.ban ? ` · ⚠️ ${BOOT.ban}반 학번이 아니에요` : "") + " · 올린 뒤에는 학교와 학번을 바꿀 수 없어요"
+    : "2학년 3반 15번 → 20315 · 올린 뒤에는 학교와 학번을 바꿀 수 없어요";
+}
+$("#fHak").addEventListener("input", e => { e.target.value = e.target.value.replace(/\D/g, "").slice(0, 5); hakHint(); });
 $("#drop").onclick = () => $("#fFile").click();
 $("#fFile").onchange = e => readFile(e.target.files[0]);
 ["dragover","dragenter"].forEach(ev => $("#drop").addEventListener(ev, e => { e.preventDefault(); $("#drop").classList.add("ok"); }));
 $("#drop").addEventListener("drop", e => { e.preventDefault(); readFile(e.dataTransfer.files[0]); });
 
 $("#upSend").onclick = async () => {
-  const title = $("#fTitle").value.trim(), author = $("#fAuthor").value.trim(), description = $("#fDesc").value.trim();
+  const title = $("#fTitle").value.trim(), description = $("#fDesc").value.trim();
+  const school = BOOT.school || $("#fSchool").value, name = $("#fName").value.trim(), hak = parseHak($("#fHak").value);
   const html = mode === "file" ? fileHtml : $("#fCode").value.trim();
-  if(!title || !author){ $("#upMsg").textContent = "작품 이름과 만든 사람을 적어 주세요"; return; }
+  if(!title){ $("#upMsg").textContent = "작품 이름을 적어 주세요"; return; }
+  if(!SCHOOLS.includes(school)){ $("#upMsg").textContent = "학교를 골라 주세요"; return; }
+  if(!hak){ $("#upMsg").textContent = "학번을 5자리 숫자로 적어 주세요 (예: 2학년 3반 15번 → 20315)"; $("#fHak").focus(); return; }
+  if(BOOT.ban && hak.ban !== BOOT.ban){ $("#upMsg").textContent = `${BOOT.ban}반 전용 링크예요. 학번을 다시 확인해 주세요`; return; }
+  if(!name){ $("#upMsg").textContent = "이름을 적어 주세요"; return; }
   if(html.length < 20){ $("#upMsg").textContent = mode === "file" ? "HTML 파일을 선택해 주세요" : "코드를 붙여넣어 주세요"; return; }
   if(html.length > MAX_SIZE){ $("#upMsg").textContent = "작품이 너무 커요 (3MB 이하)"; return; }
   const pw = $("#fPw").value;
   if(pw.length < 4){ $("#upMsg").textContent = "수정 비밀번호를 4자 이상 정해 주세요"; return; }
   $("#upSend").disabled = true; $("#upSend").textContent = "올리는 중…";
   const { data, error } = await sb.rpc("gallery_upload",
-    { p_title: title, p_author: author, p_desc: description, p_html: html, p_pw: pw });
+    { p_title: title, p_school: school, p_hakbun: hak.code, p_name: name, p_desc: description, p_html: html, p_pw: pw });
   $("#upSend").disabled = false; $("#upSend").textContent = "올리기";
   if(error){ $("#upMsg").textContent = "올리기 실패: " + error.message; return; }
-  try{ localStorage.setItem("vg_author", author); }catch(e){}
+  store.set("vg_me", { school, hak: hak.code, name });
   works.unshift(data); htmlCache.set(data.id, html); store.set(CACHE_KEY, works);
   sortBy = "new"; document.querySelectorAll("#sort button").forEach(b => b.classList.toggle("on", b.dataset.s === "new"));
   render(); closeModals();
@@ -435,14 +534,21 @@ $("#edCheck").onclick = async () => {
   if(!data){ $("#edMsg1").textContent = "비밀번호가 맞지 않아요"; return; }
   edPw = pw;
   const w = works.find(x => x.id === edId);
-  $("#eTitle").value = w.title; $("#eAuthor").value = w.author; $("#eDesc").value = w.description || "";
+  $("#eTitle").value = w.title; $("#eName").value = whoOf(w); $("#eDesc").value = w.description || "";
+  $("#eSchool").innerHTML = `<option value="">(없음)</option>` + SCHOOLS.map(s => `<option>${s}</option>`).join("");
+  $("#eSchool").value = w.school || ""; $("#eHak").value = w.hakbun || "";
+  const canMove = !!adminPw && pw === adminPw;          // 학교·학번은 선생님만 바꿀 수 있어요
+  $("#eSchool").disabled = $("#eHak").disabled = !canMove;
+  $("#eLockHint").textContent = canMove ? "(선생님만 바꿀 수 있어요)" : "(바꿀 수 없어요)";
   $("#eFile").value = ""; $("#eCode").value = "";
   $("#edStep1").style.display = "none"; $("#edStep2").style.display = "";
 };
 function readText(f){ return new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = no; r.readAsText(f, "utf-8"); }); }
 $("#edSave").onclick = async () => {
-  const title = $("#eTitle").value.trim(), author = $("#eAuthor").value.trim(), desc = $("#eDesc").value.trim();
-  if(!title || !author){ $("#edMsg2").textContent = "작품 이름과 만든 사람을 적어 주세요"; return; }
+  const title = $("#eTitle").value.trim(), name = $("#eName").value.trim(), desc = $("#eDesc").value.trim();
+  if(!title || !name){ $("#edMsg2").textContent = "작품 이름과 이름을 적어 주세요"; return; }
+  const eHak = $("#eHak").value.trim();
+  if(!$("#eHak").disabled && eHak && !parseHak(eHak)){ $("#edMsg2").textContent = "학번은 5자리 숫자예요"; return; }
   let html = $("#eCode").value.trim();
   const f = $("#eFile").files[0];
   if(f){
@@ -453,7 +559,8 @@ $("#edSave").onclick = async () => {
   if(html.length > MAX_SIZE){ $("#edMsg2").textContent = "작품이 너무 커요 (3MB 이하)"; return; }
   $("#edSave").disabled = true; $("#edSave").textContent = "저장 중…";
   const { data, error } = await sb.rpc("gallery_update",
-    { p_id: edId, p_pw: edPw, p_title: title, p_author: author, p_desc: desc, p_html: html });
+    { p_id: edId, p_pw: edPw, p_title: title, p_name: name, p_desc: desc, p_html: html,
+      p_school: $("#eSchool").value, p_hakbun: eHak });
   $("#edSave").disabled = false; $("#edSave").textContent = "저장";
   if(error || !data){ $("#edMsg2").textContent = "저장 실패" + (error ? ": " + error.message : " (비밀번호 확인)"); return; }
   const i = works.findIndex(x => x.id === edId);
@@ -465,7 +572,7 @@ $("#edSave").onclick = async () => {
 };
 async function openWorkRefresh(id){
   const w = works.find(x => x.id === id); current = w;
-  $("#vTitle").textContent = w.title; $("#vAuthor").textContent = w.author;
+  $("#vTitle").textContent = w.title; $("#vAuthor").textContent = metaText(w);
   $("#vDesc").textContent = w.description || ""; $("#vDesc").style.display = w.description ? "block" : "none";
   let html = htmlCache.get(id);
   if(!html){ const { data } = await sb.from("gallery_works").select("html").eq("id", id).single(); html = data?.html || ""; htmlCache.set(id, html); }
@@ -494,10 +601,14 @@ async function setScore(id, s){
   if(error || !data){ prev ? scores.set(id, prev) : scores.delete(id); render(); toast("점수 저장 실패"); }
 }
 $("#csvBtn").onclick = () => {
-  const rows = [["번호","작품 이름","만든 사람","점수","좋아요","올린 날짜"]];
-  [...works].sort((a,b) => a.author.localeCompare(b.author, "ko")).forEach(w => rows.push([
-    w.id, w.title, w.author, scores.get(w.id) ?? "", w.likes, new Date(w.created_at).toLocaleDateString("ko-KR")
-  ]));
+  const rows = [["학교","학번","학년","반","번호","이름","작품 이름","점수","좋아요","올린 날짜"]];
+  const si = s => { const i = SCHOOLS.indexOf(s); return i < 0 ? 99 : i; };
+  works.filter(w => !schoolFilter || w.school === schoolFilter)
+    .sort((a,b) => si(a.school) - si(b.school) || String(a.hakbun || "99999").localeCompare(String(b.hakbun || "99999")) || a.id - b.id)
+    .forEach(w => { const p = parseHak(w.hakbun) || {}; rows.push([
+      w.school || "", w.hakbun || "", p.grade ?? "", p.ban ?? "", p.num ?? "", whoOf(w), w.title,
+      scores.get(w.id) ?? "", w.likes, new Date(w.created_at).toLocaleDateString("ko-KR")
+    ]); });
   const csv = "﻿" + rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(",")).join("\r\n");
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([csv], { type:"text/csv;charset=utf-8" }));
@@ -527,7 +638,7 @@ $("#grid").addEventListener("click", async e => {
   if(del){
     e.stopPropagation();
     const id = +del.dataset.del, w = works.find(x => x.id === id);
-    if(!confirm(`"${w.title}" (${w.author}) 작품을 삭제할까요?`)) return;
+    if(!confirm(`"${w.title}" (${metaText(w)}) 작품을 삭제할까요?`)) return;
     const { data } = await sb.rpc("gallery_delete", { p_id:id, p_pw:adminPw });
     if(!data){ toast("삭제 실패 (비밀번호 확인)"); return; }
     works = works.filter(x => x.id !== id); store.set(CACHE_KEY, works); render(); toast("삭제했어요");
@@ -546,6 +657,10 @@ $("#vFull").onclick = () => { const f = $("#frame"); (f.requestFullscreen || f.w
 document.addEventListener("keydown", e => { if(e.key === "Escape"){ if($("#viewer").classList.contains("show")) closeViewer(false); else closeModals(); } });
 document.querySelectorAll("#sort button").forEach(b => b.onclick = () => {
   sortBy = b.dataset.s; document.querySelectorAll("#sort button").forEach(x => x.classList.toggle("on", x === b)); render();
+});
+$("#schoolChips").addEventListener("click", e => {
+  const b = e.target.closest("[data-school]"); if(!b) return;
+  schoolFilter = b.dataset.school; render();
 });
 let qt; $("#q").oninput = e => { clearTimeout(qt); qt = setTimeout(() => { query = e.target.value.trim().toLowerCase(); render(); }, 150); };
 $("#refresh").onclick = async () => { await load(); if(adminPw) await loadScores(); toast("새로 불러왔어요"); };
