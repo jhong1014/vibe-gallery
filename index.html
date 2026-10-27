@@ -66,6 +66,14 @@
   .sheet select:disabled,.sheet input:disabled{background:#f0eff5;color:#555}
   .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   .meta-s{color:var(--pri);font-weight:600}
+  .linkrow{display:flex;gap:8px}
+  .linkrow input{flex:1;min-width:0;font-size:13px}
+  .linkrow .btn{padding:8px 14px;flex-shrink:0}
+  @media (max-width:600px){
+    .vbar{gap:6px;padding:8px 10px}
+    .vbar .icon-btn{width:34px;height:34px;font-size:14px}
+    .vbar .heart{padding:5px 9px}
+  }
   .admin-only{display:none}
   body.admin .admin-only{display:inline-flex}
   .btn.danger{background:#fff;color:#d33;border:1px solid #f3c2c2;box-shadow:none;margin-right:auto}
@@ -99,7 +107,7 @@
   .vbar{display:flex;align-items:center;gap:10px;padding:10px 14px;background:#fff;border-bottom:1px solid var(--line)}
   .vbar .info{margin-right:auto;min-width:0}
   .vbar .info b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .vbar .info small{color:var(--sub)}
+  .vbar .info small{color:var(--sub);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .vdesc{background:#faf9ff;padding:8px 14px;font-size:14px;color:#4a4760;border-bottom:1px solid var(--line);display:none}
   .viewer iframe{flex:1;border:0;width:100%;background:#fff}
   .loading{position:absolute;inset:60px 0 0;display:grid;place-items:center;color:#fff;font-weight:600;pointer-events:none}
@@ -146,15 +154,15 @@
     <div class="hint" id="fSchoolLock"></div>
     <div class="two">
       <div>
-        <label>학번 * <span class="hint">(5자리)</span></label>
-        <input type="text" id="fHak" inputmode="numeric" maxlength="5" placeholder="예) 20315">
+        <label>학번 * <span class="hint">(4자리)</span></label>
+        <input type="text" id="fHak" inputmode="numeric" maxlength="4" placeholder="예) 2315">
       </div>
       <div>
         <label>이름 *</label>
         <input type="text" id="fName" maxlength="20" placeholder="예) 김민준">
       </div>
     </div>
-    <div class="hint" id="fHakHint">2학년 3반 15번 → 20315 · 올린 뒤에는 학교와 학번을 바꿀 수 없어요</div>
+    <div class="hint" id="fHakHint">2학년 3반 15번 → 2315 · 올린 뒤에는 학교와 학번을 바꿀 수 없어요</div>
     <label>한 줄 설명 <span class="hint">(선택)</span></label>
     <textarea id="fDesc" maxlength="300" placeholder="어떤 프로그램인지, 무엇을 의도했는지 적어 주세요"></textarea>
     <label>HTML 작품 *</label>
@@ -198,7 +206,7 @@
       <label>학교 · 학번 <span class="hint" id="eLockHint">(바꿀 수 없어요)</span></label>
       <div class="two">
         <select id="eSchool" disabled></select>
-        <input type="text" id="eHak" inputmode="numeric" maxlength="5" disabled>
+        <input type="text" id="eHak" inputmode="numeric" maxlength="4" disabled>
       </div>
       <label>이름 *</label>
       <input type="text" id="eName" maxlength="20">
@@ -241,12 +249,43 @@
   </div>
 </div>
 
+<!-- 링크 나누기 -->
+<div class="modal" id="shModal">
+  <div class="sheet">
+    <h2>🔗 작품 링크</h2>
+    <p class="hint" id="shWho"></p>
+    <label>바로 보기 링크 <span class="hint">(누르면 이 작품이 열려요)</span></label>
+    <div class="linkrow"><input type="text" id="shView" readonly><button class="btn ghost" data-copy="shView">복사</button></div>
+    <label>HTML 받기 링크 <span class="hint">(누르면 .html 파일이 내려받아져요)</span></label>
+    <div class="linkrow"><input type="text" id="shDown" readonly><button class="btn ghost" data-copy="shDown">복사</button></div>
+    <div class="actions">
+      <button class="btn ghost" data-close>닫기</button>
+      <button class="btn" id="shDownNow">⬇️ 지금 받기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 받기 링크로 들어왔을 때 -->
+<div class="modal" id="dlModal">
+  <div class="sheet" style="text-align:center">
+    <h2 id="dlTitle">⬇️ 작품 받기</h2>
+    <p class="hint" id="dlWho"></p>
+    <p id="dlMsg" class="hint">파일을 준비하고 있어요…</p>
+    <div class="actions" style="justify-content:center">
+      <button class="btn ghost" id="dlView">작품 보기</button>
+      <button class="btn" id="dlAgain">⬇️ 다시 받기</button>
+    </div>
+  </div>
+</div>
+
 <!-- 작품 보기 -->
 <div class="viewer" id="viewer">
   <div class="vbar">
     <button class="icon-btn" id="vClose" title="닫기">←</button>
     <div class="info"><b id="vTitle"></b><small id="vAuthor"></small></div>
     <button class="heart" id="vHeart"></button>
+    <button class="icon-btn" id="vDown" title="HTML 파일 받기">⬇️</button>
+    <button class="icon-btn" id="vShare" title="링크 복사">🔗</button>
     <button class="icon-btn" id="vEdit" title="내 작품 고치기">✏️</button>
     <button class="icon-btn" id="vFull" title="전체 화면">⛶</button>
   </div>
@@ -293,11 +332,11 @@ const BOOT = (() => {
   }catch(e){}
   return b;
 })();
-// 학번 5자리 → 학년(1) · 반(2) · 번호(2). 예: 20315 → 2학년 3반 15번
+// 학번 4자리 → 학년(1) · 반(1) · 번호(2). 예: 2315 → 2학년 3반 15번
 function parseHak(v){
   const d = String(v || "").replace(/\D/g, "");
-  if(d.length !== 5) return null;
-  const g = +d[0], b = +d.slice(1,3), n = +d.slice(3);
+  if(d.length !== 4) return null;
+  const g = +d[0], b = +d[1], n = +d.slice(2);
   return g >= 1 && b >= 1 && n >= 1 ? { grade:g, ban:b, num:n, code:d } : null;
 }
 const whoOf = w => w.name || w.author || "";
@@ -352,7 +391,7 @@ function render(){
   const si = s => { const i = SCHOOLS.indexOf(s); return i < 0 ? 99 : i; };
   list.sort(
     sortBy === "like" ? (a,b) => b.likes - a.likes || b.id - a.id :
-    sortBy === "hak"  ? (a,b) => si(a.school) - si(b.school) || String(a.hakbun || "99999").localeCompare(String(b.hakbun || "99999")) || a.id - b.id :
+    sortBy === "hak"  ? (a,b) => si(a.school) - si(b.school) || String(a.hakbun || "9999").localeCompare(String(b.hakbun || "9999")) || a.id - b.id :
                         (a,b) => b.id - a.id);
   $("#count").textContent = !works.length ? "" :
     adminPw ? `· ${works.length}개 · 평가 ${works.filter(w => scores.has(w.id)).length}/${works.length}` : `· ${works.length}개`;
@@ -467,6 +506,64 @@ async function toggleLike(id){
   if(!error && typeof data === "number"){ w.likes = data; render(); if(current && current.id === id) paintViewerHeart(); store.set(CACHE_KEY, works); }
 }
 
+// ---------- HTML 받기 · 링크 ----------
+const BASE_URL = location.origin + location.pathname;
+const viewLink = id => BASE_URL + "#" + id;
+const downLink = id => BASE_URL + "?dl=" + id;
+function fileNameOf(w){
+  const clean = s => String(s || "").replace(/[\\/:*?"<>|\s]+/g, "_").replace(/^_+|_+$/g, "");
+  return [w.school ? (SHORT[w.school] || w.school) : "", w.hakbun, whoOf(w), w.title].map(clean).filter(Boolean).join("_").slice(0, 80) + ".html";
+}
+async function getHtml(id){
+  let html = htmlCache.get(id);
+  if(html) return html;
+  const { data, error } = await sb.from("gallery_works").select("html").eq("id", id).single();
+  if(error || !data) return null;
+  htmlCache.set(id, data.html);
+  return data.html;
+}
+async function downloadWork(id){
+  const w = works.find(x => x.id === id); if(!w) return false;
+  const html = await getHtml(id);
+  if(!html){ toast("작품을 불러오지 못했어요"); return false; }
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([html], { type:"text/html;charset=utf-8" }));
+  a.download = fileNameOf(w);
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  return true;
+}
+function openShare(id){
+  const w = works.find(x => x.id === id); if(!w) return;
+  $("#shWho").textContent = `${w.title} · ${metaText(w)}`;
+  $("#shView").value = viewLink(id);
+  $("#shDown").value = downLink(id);
+  $("#shDownNow").onclick = () => downloadWork(id);
+  openModal("#shModal");
+}
+document.querySelectorAll("[data-copy]").forEach(b => b.onclick = async () => {
+  const inp = $("#" + b.dataset.copy);
+  try{ await navigator.clipboard.writeText(inp.value); }
+  catch(e){ inp.select(); try{ document.execCommand("copy"); }catch(_){} }
+  toast("링크를 복사했어요");
+});
+$("#vDown").onclick = async () => { if(current && await downloadWork(current.id)) toast("⬇️ 파일을 받았어요"); };
+$("#vShare").onclick = () => current && openShare(current.id);
+// ?dl=번호 로 들어오면 바로 내려받기
+async function bootDownload(id){
+  const w = works.find(x => x.id === id);
+  if(!w){ toast("작품을 찾을 수 없어요"); return; }
+  $("#dlWho").textContent = `${w.title} · ${metaText(w)}`;
+  $("#dlMsg").textContent = "파일을 준비하고 있어요…";
+  $("#dlView").onclick = () => { closeModals(); openWork(id); };
+  $("#dlAgain").onclick = async () => { if(await downloadWork(id)) $("#dlMsg").textContent = "✅ 다운로드 폴더를 확인해 주세요"; };
+  openModal("#dlModal");
+  $("#dlMsg").textContent = (await downloadWork(id))
+    ? "✅ 다운로드 폴더를 확인해 주세요 · 안 받아졌으면 [다시 받기]를 눌러요"
+    : "파일을 불러오지 못했어요. [다시 받기]를 눌러 주세요";
+  history.replaceState(null, "", location.pathname + location.search.replace(/[?&]dl=\d+/, "").replace(/^&/, "?"));
+}
+
 // ---------- 작품 보기 ----------
 async function openWork(id){
   const w = works.find(x => x.id === id); if(!w) return;
@@ -550,9 +647,9 @@ function hakHint(){
   const v = $("#fHak").value, p = parseHak(v);
   $("#fHakHint").textContent = p
     ? `✅ ${p.grade}학년 ${p.ban}반 ${p.num}번` + (BOOT.ban && p.ban !== BOOT.ban ? ` · ⚠️ ${BOOT.ban}반 학번이 아니에요` : "") + " · 올린 뒤에는 학교와 학번을 바꿀 수 없어요"
-    : "2학년 3반 15번 → 20315 · 올린 뒤에는 학교와 학번을 바꿀 수 없어요";
+    : "2학년 3반 15번 → 2315 · 올린 뒤에는 학교와 학번을 바꿀 수 없어요";
 }
-$("#fHak").addEventListener("input", e => { e.target.value = e.target.value.replace(/\D/g, "").slice(0, 5); hakHint(); });
+$("#fHak").addEventListener("input", e => { e.target.value = e.target.value.replace(/\D/g, "").slice(0, 4); hakHint(); });
 $("#drop").onclick = () => $("#fFile").click();
 $("#fFile").onchange = e => readFile(e.target.files[0]);
 ["dragover","dragenter"].forEach(ev => $("#drop").addEventListener(ev, e => { e.preventDefault(); $("#drop").classList.add("ok"); }));
@@ -564,7 +661,7 @@ $("#upSend").onclick = async () => {
   const html = mode === "file" ? fileHtml : $("#fCode").value.trim();
   if(!title){ $("#upMsg").textContent = "작품 이름을 적어 주세요"; return; }
   if(!SCHOOLS.includes(school)){ $("#upMsg").textContent = "학교를 골라 주세요"; return; }
-  if(!hak){ $("#upMsg").textContent = "학번을 5자리 숫자로 적어 주세요 (예: 2학년 3반 15번 → 20315)"; $("#fHak").focus(); return; }
+  if(!hak){ $("#upMsg").textContent = "학번을 4자리 숫자로 적어 주세요 (예: 2학년 3반 15번 → 2315)"; $("#fHak").focus(); return; }
   if(BOOT.ban && hak.ban !== BOOT.ban){ $("#upMsg").textContent = `${BOOT.ban}반 전용 링크예요. 학번을 다시 확인해 주세요`; return; }
   if(!name){ $("#upMsg").textContent = "이름을 적어 주세요"; return; }
   if(html.length < 20){ $("#upMsg").textContent = mode === "file" ? "HTML 파일을 선택해 주세요" : "코드를 붙여넣어 주세요"; return; }
@@ -619,7 +716,7 @@ $("#edSave").onclick = async () => {
   const title = $("#eTitle").value.trim(), name = $("#eName").value.trim(), desc = $("#eDesc").value.trim();
   if(!title || !name){ $("#edMsg2").textContent = "작품 이름과 이름을 적어 주세요"; return; }
   const eHak = $("#eHak").value.trim();
-  if(!$("#eHak").disabled && eHak && !parseHak(eHak)){ $("#edMsg2").textContent = "학번은 5자리 숫자예요"; return; }
+  if(!$("#eHak").disabled && eHak && !parseHak(eHak)){ $("#edMsg2").textContent = "학번은 4자리 숫자예요 (예: 2315)"; return; }
   let html = $("#eCode").value.trim();
   const f = $("#eFile").files[0];
   if(f){
@@ -675,7 +772,7 @@ $("#csvBtn").onclick = () => {
   const rows = [["학교","학번","학년","반","번호","이름","작품 이름","점수","좋아요","올린 날짜"]];
   const si = s => { const i = SCHOOLS.indexOf(s); return i < 0 ? 99 : i; };
   works.filter(w => !schoolFilter || w.school === schoolFilter)
-    .sort((a,b) => si(a.school) - si(b.school) || String(a.hakbun || "99999").localeCompare(String(b.hakbun || "99999")) || a.id - b.id)
+    .sort((a,b) => si(a.school) - si(b.school) || String(a.hakbun || "9999").localeCompare(String(b.hakbun || "9999")) || a.id - b.id)
     .forEach(w => { const p = parseHak(w.hakbun) || {}; rows.push([
       w.school || "", w.hakbun || "", p.grade ?? "", p.ban ?? "", p.num ?? "", whoOf(w), w.title,
       scores.get(w.id) ?? "", w.likes, new Date(w.created_at).toLocaleDateString("ko-KR")
@@ -741,7 +838,10 @@ function toast(t){ const el = $("#toast"); el.textContent = t; el.classList.add(
 works = store.get(CACHE_KEY, []);
 works.length ? render() : skeleton();
 load().then(() => {
-  const id = +location.hash.slice(1); if(id && works.some(w => w.id === id)) openWork(id);
+  const dl = +(new URLSearchParams(location.search).get("dl") || 0);
+  const id = +location.hash.slice(1);
+  if(dl) bootDownload(dl);
+  else if(id && works.some(w => w.id === id)) openWork(id);
   setTimeout(fillThumbs, 2500);
 });
 </script>
