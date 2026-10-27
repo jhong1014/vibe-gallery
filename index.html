@@ -29,23 +29,19 @@
   .btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--line);box-shadow:none}
   .icon-btn{border:1px solid var(--line);background:#fff;border-radius:50%;width:40px;height:40px;cursor:pointer;font-size:16px}
   main{max-width:1200px;margin:0 auto;padding:20px 16px 60px}
-  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:18px}
-  .card{background:var(--card);border-radius:18px;overflow:hidden;box-shadow:var(--shadow);cursor:pointer;
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:14px}
+  .card{background:var(--card);border-radius:14px;overflow:hidden;box-shadow:var(--shadow);cursor:pointer;
     transition:transform .15s,box-shadow .15s;display:flex;flex-direction:column;position:relative}
   .card:hover{transform:translateY(-4px);box-shadow:0 10px 28px rgba(40,20,120,.14)}
-  .cover{aspect-ratio:16/10;display:grid;place-items:center;font-size:52px;position:relative}
-  .cover{overflow:hidden}
-  .cover img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top center;background:#fff;opacity:0;transition:opacity .3s}
-  .cover img.ok{opacity:1}
-  .cover .new{z-index:1}
-  .cover .new{position:absolute;top:10px;left:10px;background:#fff;color:var(--pri);font-size:11px;font-weight:800;padding:3px 8px;border-radius:999px}
-  .body{padding:12px 14px 14px;display:flex;flex-direction:column;gap:4px}
-  .title{font-weight:700;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cover{aspect-ratio:2/1;display:grid;place-items:center;font-size:36px;position:relative}
+  .cover .new{position:absolute;top:7px;left:7px;background:#fff;color:var(--pri);font-size:11px;font-weight:800;padding:2px 7px;border-radius:999px;font-size:10px}
+  .body{padding:9px 11px 10px;display:flex;flex-direction:column;gap:3px}
+  .title{font-weight:700;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .row{display:flex;align-items:center;justify-content:space-between;gap:8px}
-  .author{color:var(--sub);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .author{color:var(--sub);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .body .row .title{min-width:0}
-  .heart{border:0;background:#fff3f6;color:var(--heart);border-radius:999px;padding:5px 11px;font-weight:700;cursor:pointer;
-    display:flex;align-items:center;gap:4px;font-size:14px;flex-shrink:0;transition:transform .1s}
+  .heart{border:0;background:#fff3f6;color:var(--heart);border-radius:999px;padding:3px 9px;font-weight:700;cursor:pointer;
+    display:flex;align-items:center;gap:3px;font-size:12.5px;flex-shrink:0;transition:transform .1s}
   .heart:active{transform:scale(1.2)}
   .heart .h{font-size:15px;line-height:1}
   .heart.off{background:#f3f2f7;color:#9a97ab}
@@ -55,7 +51,7 @@
   body.admin .scores{display:flex}
   .scores button{flex:1;border:1px solid var(--line);background:#fff;border-radius:8px;padding:5px 0;font-weight:700;font-size:13px;cursor:pointer;color:var(--sub)}
   .scores button.on{background:var(--pri);border-color:var(--pri);color:#fff}
-  .badge{z-index:1;position:absolute;top:10px;right:10px;background:var(--pri);color:#fff;font-weight:800;font-size:12px;padding:3px 9px;border-radius:999px;display:none}
+  .badge{z-index:1;position:absolute;top:7px;right:7px;background:var(--pri);color:#fff;font-weight:800;font-size:12px;padding:3px 9px;border-radius:999px;display:none}
   body.admin .badge{display:block}
   body.admin .del{top:auto;bottom:auto;right:auto;left:8px;top:36px}
   .chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
@@ -114,9 +110,9 @@
   .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:11px 18px;border-radius:999px;font-size:14px;z-index:50;opacity:0;transition:opacity .2s;pointer-events:none}
   .toast.show{opacity:1}
   @media (max-width:600px){
-    .grid{grid-template-columns:repeat(2,1fr);gap:12px}
-    .cover{font-size:40px}
-    .title{font-size:15px}
+    .grid{grid-template-columns:repeat(2,1fr);gap:10px}
+    .cover{font-size:30px}
+    .title{font-size:14px}
     .search{max-width:none;order:5;flex-basis:100%}
   }
 </style>
@@ -310,8 +306,7 @@ const $ = s => document.querySelector(s);
 let works = [], sortBy = "new", query = "", adminPw = null, current = null;
 let scores = new Map();            // 선생님 모드에서만 채워짐
 const SCORE_SET = [30, 22, 14, 6];
-const COLS = "id,title,school,hakbun,name,author,description,likes,created_at,updated_at,thumb";
-const THUMB_BASE = SB_URL + "/storage/v1/object/public/gallery-thumbs/";
+const COLS = "id,title,school,hakbun,name,author,description,likes,created_at,updated_at";
 
 // ---------- 학교 · 학번 ----------
 const SCHOOLS = ["장성중학교", "장성황룡중학교", "장성삼서중학교"];
@@ -406,7 +401,7 @@ function render(){
     const isNew = new Date(w.created_at).getTime() > dayAgo;
     const sc = scores.get(w.id);
     return `<div class="card" data-id="${w.id}">
-      <div class="cover" style="background:linear-gradient(135deg,${g[0]},${g[1]})">${isNew ? '<span class="new">NEW</span>' : ""}${sc ? `<span class="badge">${sc}점</span>` : ""}${pickEmoji(w)}${w.thumb ? `<img src="${THUMB_BASE + encodeURIComponent(w.thumb)}" alt="" loading="lazy" decoding="async" onload="this.classList.add('ok')" onerror="this.remove()">` : ""}</div>
+      <div class="cover" style="background:linear-gradient(135deg,${g[0]},${g[1]})">${isNew ? '<span class="new">NEW</span>' : ""}${sc ? `<span class="badge">${sc}점</span>` : ""}${pickEmoji(w)}</div>
       <button class="del" data-del="${w.id}">삭제</button>
       <div class="body">
         <div class="row">
@@ -427,71 +422,6 @@ async function load(){
   works = data;
   store.set(CACHE_KEY, works);
   render();
-}
-
-// ---------- 미리보기 사진(썸네일) ----------
-// 작품을 보이지 않는 틀에서 960×600 크기로 실행 → 1.5초 뒤 화면을 찍어 작은 jpg로 저장
-const H2C = "https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js";
-function capture(html){
-  return new Promise(resolve => {
-    const token = Math.random().toString(36).slice(2);
-    const shot = `<script>(function(){var T=${JSON.stringify(token)};function send(u){try{parent.postMessage({vgThumb:T,url:u},"*")}catch(e){}}
-function go(){var s=document.createElement("script");s.src=${JSON.stringify(H2C)};s.onerror=function(){send(null)};
-s.onload=function(){setTimeout(function(){var bg=getComputedStyle(document.body).backgroundColor;
-html2canvas(document.documentElement,{width:960,height:600,windowWidth:960,windowHeight:600,x:0,y:0,scrollX:0,scrollY:0,scale:0.5,logging:false,useCORS:true,
-backgroundColor:(bg&&bg!=="rgba(0, 0, 0, 0)")?bg:"#ffffff"}).then(function(c){send(c.toDataURL("image/jpeg",0.72))}).catch(function(){send(null)})},1500)};
-document.head.appendChild(s)}if(document.readyState==="complete")go();else addEventListener("load",go)})();<\/script>`;
-    const doc = /<\/body>/i.test(html) ? html.replace(/<\/body>(?![\s\S]*<\/body>)/i, shot + "</body>") : html + shot;
-    const f = document.createElement("iframe");
-    f.setAttribute("sandbox", "allow-scripts");               // 팝업·알림창·소리 없이 조용히 실행
-    f.setAttribute("aria-hidden", "true");
-    f.style.cssText = "position:fixed;left:-12000px;top:0;width:960px;height:600px;border:0;pointer-events:none";
-    let done = false;
-    const finish = url => { if(done) return; done = true; removeEventListener("message", onMsg); f.remove(); resolve(url); };
-    const onMsg = e => { if(e.source === f.contentWindow && e.data && e.data.vgThumb === token) finish(e.data.url || null); };
-    addEventListener("message", onMsg);
-    setTimeout(() => finish(null), 12000);
-    f.srcdoc = doc;
-    document.body.appendChild(f);
-  });
-}
-async function makeThumb(id, html, pw){
-  try{
-    const url = await capture(html);
-    if(!url) return false;
-    const blob = await (await fetch(url)).blob();
-    if(blob.size < 1500) return false;                              // 거의 빈 화면
-    const path = `${id}_${Date.now()}.jpg`;
-    const up = await sb.storage.from("gallery-thumbs").upload(path, blob, { contentType:"image/jpeg", cacheControl:"31536000" });
-    if(up.error) return false;
-    const { data } = await sb.rpc("gallery_set_thumb", { p_id:id, p_path:path, p_pw:pw || "" });
-    if(!data) return false;
-    const w = works.find(x => x.id === id);
-    if(w){ w.thumb = path; store.set(CACHE_KEY, works); render(); }
-    return true;
-  }catch(e){ return false; }
-}
-// 사진이 아직 없는 예전 작품은 둘러보는 동안 한 개씩 천천히 채워요
-const thumbTried = new Set();
-let thumbBusy = false;
-async function fillThumbs(){
-  if(thumbBusy) return;
-  thumbBusy = true;
-  try{
-    for(let k = 0; k < 6; k++){
-      const w = works.find(x => !x.thumb && !thumbTried.has(x.id));
-      if(!w) break;
-      thumbTried.add(w.id);
-      let html = htmlCache.get(w.id);
-      if(!html){
-        const { data } = await sb.from("gallery_works").select("html").eq("id", w.id).single();
-        if(!data) continue;
-        html = data.html;
-      }
-      await makeThumb(w.id, html, adminPw || "");
-      await new Promise(r => setTimeout(r, 800));
-    }
-  }finally{ thumbBusy = false; }
 }
 
 // ---------- 좋아요 ----------
@@ -675,7 +605,6 @@ $("#upSend").onclick = async () => {
   if(error){ $("#upMsg").textContent = "올리기 실패: " + error.message; return; }
   store.set("vg_me", { school, hak: hak.code, name });
   works.unshift(data); htmlCache.set(data.id, html); store.set(CACHE_KEY, works);
-  makeThumb(data.id, html, pw);   // 미리보기 사진 찍기(뒤에서)
   sortBy = "new"; document.querySelectorAll("#sort button").forEach(b => b.classList.toggle("on", b.dataset.s === "new"));
   render(); closeModals();
   $("#fTitle").value = ""; $("#fDesc").value = ""; $("#fCode").value = ""; $("#fPw").value = ""; fileHtml = ""; $("#fFile").value = "";
@@ -733,7 +662,7 @@ $("#edSave").onclick = async () => {
   if(error || !data){ $("#edMsg2").textContent = "저장 실패" + (error ? ": " + error.message : " (비밀번호 확인)"); return; }
   const i = works.findIndex(x => x.id === edId);
   works[i] = { ...works[i], ...data };
-  if(html){ htmlCache.set(edId, html); makeThumb(edId, html, edPw); } else htmlCache.delete(edId);
+  if(html) htmlCache.set(edId, html); else htmlCache.delete(edId);
   store.set(CACHE_KEY, works); render(); closeModals();
   if(current && current.id === edId) openWorkRefresh(edId);
   toast("✅ 고쳤어요!");
@@ -842,7 +771,6 @@ load().then(() => {
   const id = +location.hash.slice(1);
   if(dl) bootDownload(dl);
   else if(id && works.some(w => w.id === id)) openWork(id);
-  setTimeout(fillThumbs, 2500);
 });
 </script>
 </body>
