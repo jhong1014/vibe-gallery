@@ -494,6 +494,53 @@ async function bootDownload(id){
   history.replaceState(null, "", location.pathname + location.search.replace(/[?&]dl=\d+/, "").replace(/^&/, "?"));
 }
 
+// ---------- 작품 안의 저장 기능(localStorage) ----------
+// 격리된 틀 안에서는 브라우저 저장소를 못 써서 작품이 멈출 수 있어요.
+// 그래서 대신 쓸 저장소를 끼워 넣고, 바뀐 내용은 이 기기의 갤러리 저장소에 작품별로 보관해요.
+const LS_PREFIX = "vg_ls_";
+const LS_MAX = 500000;   // 작품당 약 0.5MB까지
+let lsToken = "", lsWorkId = null;
+function frameDoc(id, html){
+  lsToken = Math.random().toString(36).slice(2); lsWorkId = id;
+  const saved = store.get(LS_PREFIX + id, {});
+  const shim = `<script>(function(){
+try{window.localStorage.getItem("_");return}catch(e){}
+var T=${JSON.stringify(lsToken)},S=${JSON.stringify(saved).replace(/</g, "\\u003c")};
+function mk(d,persist){
+  var has=function(k){return Object.prototype.hasOwnProperty.call(d,k)};
+  var sync=function(){if(persist)try{parent.postMessage({vgLS:T,data:d},"*")}catch(e){}};
+  var api={},fn={getItem:function(k){k=String(k);return has(k)?d[k]:null},
+    setItem:function(k,v){d[String(k)]=String(v);sync()},
+    removeItem:function(k){delete d[String(k)];sync()},
+    clear:function(){for(var k in d)delete d[k];sync()},
+    key:function(i){var a=Object.keys(d);return i<a.length?a[i]:null}};
+  for(var n in fn)Object.defineProperty(api,n,{value:fn[n],enumerable:false,configurable:true,writable:true});
+  Object.defineProperty(api,"length",{get:function(){return Object.keys(d).length},enumerable:false,configurable:true});
+  return new Proxy(api,{
+    get:function(t,p){if(p in t)return typeof t[p]==="function"?t[p].bind(t):t[p];if(typeof p==="string"&&has(p))return d[p];return undefined},
+    set:function(t,p,v){api.setItem(p,v);return true},
+    deleteProperty:function(t,p){api.removeItem(p);return true},
+    has:function(t,p){return p in t||has(p)},
+    ownKeys:function(){return Object.keys(d).concat(["getItem","setItem","removeItem","clear","key","length"])},
+    getOwnPropertyDescriptor:function(t,p){if(has(p))return{value:d[p],enumerable:true,configurable:true,writable:true};return Object.getOwnPropertyDescriptor(t,p)}
+  });
+}
+try{Object.defineProperty(window,"localStorage",{value:mk(S,true),configurable:true})}catch(e){}
+try{Object.defineProperty(window,"sessionStorage",{value:mk({},false),configurable:true})}catch(e){}
+})();<\/script>`;
+  // <!doctype> 앞에 넣으면 화면 모양이 달라지므로 <head> 바로 뒤(없으면 <html> 뒤)에 넣어요
+  const m = /<head\b[^>]*>/i.exec(html) || /<html\b[^>]*>/i.exec(html) || /<!doctype[^>]*>/i.exec(html);
+  return m ? html.slice(0, m.index + m[0].length) + shim + html.slice(m.index + m[0].length) : shim + html;
+}
+addEventListener("message", e => {
+  const d = e.data;
+  if(!d || !lsToken || d.vgLS !== lsToken || e.source !== $("#frame").contentWindow) return;
+  try{
+    const json = JSON.stringify(d.data || {});
+    if(json.length <= LS_MAX) localStorage.setItem(LS_PREFIX + lsWorkId, json);
+  }catch(err){}
+});
+
 // ---------- 작품 보기 ----------
 async function openWork(id){
   const w = works.find(x => x.id === id); if(!w) return;
@@ -515,7 +562,7 @@ async function openWork(id){
     html = data.html; htmlCache.set(id, html);
   }
   if(current !== w) return;
-  $("#frame").srcdoc = html;
+  $("#frame").srcdoc = frameDoc(id, html);
   $("#vLoading").style.display = "none";
 }
 function closeViewer(fromPop){
@@ -673,7 +720,7 @@ async function openWorkRefresh(id){
   $("#vDesc").textContent = w.description || ""; $("#vDesc").style.display = w.description ? "block" : "none";
   let html = htmlCache.get(id);
   if(!html){ const { data } = await sb.from("gallery_works").select("html").eq("id", id).single(); html = data?.html || ""; htmlCache.set(id, html); }
-  $("#frame").srcdoc = html;
+  $("#frame").srcdoc = frameDoc(id, html);
 }
 $("#edDel").onclick = async () => {
   const w = works.find(x => x.id === edId);
