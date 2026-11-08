@@ -47,10 +47,22 @@
   .heart.off{background:#f3f2f7;color:#9a97ab}
   .del{position:absolute;top:8px;right:8px;border:0;background:rgba(0,0,0,.6);color:#fff;border-radius:999px;padding:5px 10px;font-size:12px;cursor:pointer;display:none}
   body.admin .del{display:block}
-  .scores{display:none;gap:5px;margin-top:8px}
-  body.admin .scores{display:flex}
-  .scores button{flex:1;border:1px solid var(--line);background:#fff;border-radius:8px;padding:5px 0;font-weight:700;font-size:13px;cursor:pointer;color:var(--sub)}
-  .scores button.on{background:var(--pri);border-color:var(--pri);color:#fff}
+  .areas{display:none;flex-direction:column;gap:5px;margin-top:8px}
+  body.admin .areas{display:flex}
+  .area .an{font-size:11px;font-weight:700;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
+  .area .ao{display:flex;gap:4px}
+  .area .ao button{flex:1;border:1px solid var(--line);background:#fff;border-radius:8px;padding:4px 0;font-weight:700;font-size:12px;cursor:pointer;color:var(--sub)}
+  .area .ao button.on{background:var(--pri);border-color:var(--pri);color:#fff}
+  .areas .none{font-size:11px;color:var(--sub);line-height:1.5}
+  .chat-a{display:none;font-size:12px;font-weight:700;color:var(--pri);text-decoration:none;margin-top:4px}
+  body.admin .chat-a{display:inline-block}
+  .chat-a.miss{color:#c2410c}
+  .vscore{display:none;background:#fff;border-bottom:1px solid var(--line);padding:8px 14px;gap:12px;flex-wrap:wrap;align-items:flex-end}
+  body.admin .vscore.has{display:flex}
+  .vscore .area{min-width:150px}
+  .vscore .total{font-weight:800;color:var(--pri);margin-left:auto;align-self:center}
+  .vchat{display:none;text-decoration:none;align-items:center;justify-content:center}
+  .vchat.show{display:inline-flex}
   .badge{z-index:1;position:absolute;top:10px;right:10px;background:var(--pri);color:#fff;font-weight:800;font-size:12px;padding:3px 9px;border-radius:999px;display:none}
   body.admin .badge{display:block}
   body.admin .del{top:auto;bottom:auto;right:auto;left:8px;top:36px}
@@ -161,6 +173,9 @@
     <div class="hint" id="fHakHint">2학년 3반 15번 → 2315 · 올린 뒤에는 학교와 학번을 바꿀 수 없어요</div>
     <label>한 줄 설명 <span class="hint">(선택)</span></label>
     <textarea id="fDesc" maxlength="300" placeholder="어떤 프로그램인지, 무엇을 의도했는지 적어 주세요"></textarea>
+    <label>AI 대화기록 링크 * <span class="hint">(작품을 만들며 AI와 나눈 대화의 공유 링크)</span></label>
+    <input type="text" id="fChat" maxlength="1000" inputmode="url" placeholder="예) https://gemini.google.com/share/…">
+    <div class="hint">제미나이: 대화 오른쪽 위 공유(⋮ → 공유) → 링크 만들기 → 복사 · 선생님만 볼 수 있어요</div>
     <label>HTML 작품 *</label>
     <div class="tabs">
       <button class="on" data-m="file">📁 파일 올리기</button>
@@ -208,6 +223,8 @@
       <input type="text" id="eName" maxlength="20">
       <label>한 줄 설명</label>
       <textarea id="eDesc" maxlength="300"></textarea>
+      <label>AI 대화기록 링크</label>
+      <input type="text" id="eChat" maxlength="1000" inputmode="url" placeholder="https://…">
       <label>HTML 바꾸기 <span class="hint">(그대로 두려면 비워 두세요)</span></label>
       <input type="file" id="eFile" accept=".html,.htm,text/html">
       <textarea id="eCode" style="min-height:90px;font-family:monospace;font-size:12px;margin-top:8px" placeholder="또는 새 코드를 붙여넣기"></textarea>
@@ -225,7 +242,7 @@
 <div class="modal" id="adModal">
   <div class="sheet">
     <h2>🔒 선생님 모드</h2>
-    <p class="hint">켜면 카드마다 평가 점수(30·22·14·6)와 삭제 버튼이 보여요. 점수는 학생에게 보이지 않아요.</p>
+    <p class="hint">켜면 카드와 작품 보기 화면에 수행평가 영역별 점수표 · 대화기록 링크 · 삭제 버튼이 보여요. 고른 점수는 수행평가관리에 자동으로 입력되고, 학생에게는 보이지 않아요.<br>점수표의 영역은 수행평가관리 → 점수 입력 → "바이브코딩 갤러리 점수 자동 입력"에서 학교와 연결한 영역이에요.</p>
     <label>비밀번호</label>
     <input type="password" id="adPw">
     <details style="margin-top:12px"><summary class="hint">비밀번호 바꾸기</summary>
@@ -280,12 +297,14 @@
     <button class="icon-btn" id="vClose" title="닫기">←</button>
     <div class="info"><b id="vTitle"></b><small id="vAuthor"></small></div>
     <button class="heart" id="vHeart"></button>
+    <a class="icon-btn vchat" id="vChat" title="AI 대화기록 보기" target="_blank" rel="noopener noreferrer">💬</a>
     <button class="icon-btn" id="vDown" title="HTML 파일 받기">⬇️</button>
     <button class="icon-btn" id="vShare" title="링크 복사">🔗</button>
     <button class="icon-btn" id="vEdit" title="내 작품 고치기">✏️</button>
     <button class="icon-btn" id="vFull" title="전체 화면">⛶</button>
   </div>
   <div class="vdesc" id="vDesc"></div>
+  <div class="vscore" id="vScore"></div>
   <iframe id="frame" sandbox="allow-scripts allow-forms allow-modals allow-popups allow-pointer-lock" allow="fullscreen; autoplay"></iframe>
   <div class="loading" id="vLoading">불러오는 중…</div>
 </div>
@@ -304,8 +323,27 @@ const LIKE_KEY = "vg_likes_v1";
 const $ = s => document.querySelector(s);
 
 let works = [], sortBy = "new", query = "", adminPw = null, current = null;
-let scores = new Map();            // 선생님 모드에서만 채워짐
-const SCORE_SET = [30, 22, 14, 6];
+// 선생님 모드에서만 채워짐
+let areas = {};                    // 갤러리 학교 → [{id, name, max_score, task, scores:[…]}] (수행평가 영역)
+let itemScores = new Map();        // "작품id|영역id" → 점수
+let chats = new Map();             // 작품id → 대화기록 링크
+const isKey = (wid, iid) => wid + "|" + iid;
+const areasOf = w => areas[w.school] || [];
+function workTotal(w){
+  const list = areasOf(w); let sum = 0, max = 0, filled = 0;
+  list.forEach(a => { max += +a.max_score || 0; const v = itemScores.get(isKey(w.id, a.id)); if(v != null){ sum += v; filled++; } });
+  return { sum, max, filled, n: list.length };
+}
+function areaButtons(w){
+  const list = areasOf(w);
+  if(!list.length) return `<div class="none">${w.school ? "수행평가관리에서 " + esc(SHORT[w.school] || w.school) + " 영역을 연결하면 점수표가 나와요" : "학교가 없는 작품이에요"}</div>`;
+  return list.map(a => {
+    const cur = itemScores.get(isKey(w.id, a.id));
+    return `<div class="area"><div class="an" title="${esc(a.name)} (${a.max_score}점)">${esc(a.name)}</div><div class="ao">` +
+      a.scores.map(v => `<button data-iscore="${v}" data-iid="${a.id}" data-sid="${w.id}" class="${cur === +v ? "on" : ""}">${v}</button>`).join("") + `</div></div>`;
+  }).join("");
+}
+const safeUrl = u => /^https?:\/\//i.test(u || "") ? u : "";
 const COLS = "id,title,school,hakbun,name,author,description,likes,created_at,updated_at";
 
 // ---------- 학교 · 학번 ----------
@@ -389,7 +427,7 @@ function render(){
     sortBy === "hak"  ? (a,b) => si(a.school) - si(b.school) || String(a.hakbun || "9999").localeCompare(String(b.hakbun || "9999")) || a.id - b.id :
                         (a,b) => b.id - a.id);
   $("#count").textContent = !works.length ? "" :
-    adminPw ? `· ${works.length}개 · 평가 ${works.filter(w => scores.has(w.id)).length}/${works.length}` : `· ${works.length}개`;
+    adminPw ? `· ${works.length}개 · 채점 완료 ${works.filter(w => { const t = workTotal(w); return t.n && t.filled === t.n; }).length}/${works.length}` : `· ${works.length}개`;
   if(!list.length){
     $("#grid").innerHTML = `<div class="empty">${works.length ? "검색 결과가 없어요" : "아직 올라온 작품이 없어요.<br>첫 작품을 올려 보세요! 🚀"}</div>`;
     return;
@@ -399,9 +437,9 @@ function render(){
     const g = GRAD[hash(whoOf(w) + w.id) % GRAD.length];
     const on = liked.has(w.id);
     const isNew = new Date(w.created_at).getTime() > dayAgo;
-    const sc = scores.get(w.id);
+    const t = adminPw ? workTotal(w) : null, chat = safeUrl(chats.get(w.id));
     return `<div class="card" data-id="${w.id}">
-      <div class="cover" style="background:linear-gradient(135deg,${g[0]},${g[1]})">${isNew ? '<span class="new">NEW</span>' : ""}${sc ? `<span class="badge">${sc}점</span>` : ""}${pickEmoji(w)}</div>
+      <div class="cover" style="background:linear-gradient(135deg,${g[0]},${g[1]})">${isNew ? '<span class="new">NEW</span>' : ""}${t && t.filled ? `<span class="badge">${t.sum}/${t.max}점</span>` : ""}${pickEmoji(w)}</div>
       <button class="del" data-del="${w.id}">삭제</button>
       <div class="body">
         <div class="row">
@@ -409,7 +447,8 @@ function render(){
           <button class="heart ${on ? "" : "off"}" data-like="${w.id}"><span class="h">${on ? "♥" : "♡"}</span>${w.likes}</button>
         </div>
         <div class="author" title="${esc(metaText(w))}">${metaHtml(w)}</div>
-        <div class="scores">${SCORE_SET.map(s => `<button data-score="${s}" data-sid="${w.id}" class="${sc === s ? "on" : ""}">${s}</button>`).join("")}</div>
+        ${adminPw ? (chat ? `<a class="chat-a" href="${esc(chat)}" target="_blank" rel="noopener noreferrer" data-chat>💬 대화기록 보기</a>` : `<span class="chat-a miss">💬 대화기록 없음</span>`) : ""}
+        ${adminPw ? `<div class="areas">${areaButtons(w)}</div>` : ""}
       </div>
     </div>`;
   }).join("");
@@ -549,7 +588,7 @@ async function openWork(id){
   $("#vAuthor").textContent = metaText(w);
   $("#vDesc").textContent = w.description || "";
   $("#vDesc").style.display = w.description ? "block" : "none";
-  paintViewerHeart();
+  paintViewerHeart(); paintViewerAdmin();
   $("#frame").srcdoc = "";
   $("#vLoading").style.display = "grid";
   $("#viewer").classList.add("show");
@@ -572,6 +611,21 @@ function closeViewer(fromPop){
   current = null;
   if(!fromPop && location.hash) history.back();
 }
+// 선생님 모드 : 작품 보기 화면의 대화기록 버튼 · 영역별 점수표
+function paintViewerAdmin(){
+  const w = current, chat = w && adminPw ? safeUrl(chats.get(w.id)) : "";
+  $("#vChat").classList.toggle("show", !!chat);
+  if(chat) $("#vChat").href = chat; else $("#vChat").removeAttribute("href");
+  const box = $("#vScore");
+  if(!w || !adminPw){ box.classList.remove("has"); box.innerHTML = ""; return; }
+  const t = workTotal(w);
+  box.innerHTML = areaButtons(w) + (t.n ? `<span class="total">합계 ${t.sum} / ${t.max}점</span>` : "") + (chat ? "" : `<span class="hint">💬 대화기록 링크 없음</span>`);
+  box.classList.add("has");
+}
+$("#vScore").addEventListener("click", e => {
+  const b = e.target.closest("[data-iscore]");
+  if(b) setItemScore(+b.dataset.sid, +b.dataset.iid, +b.dataset.iscore);
+});
 function paintViewerHeart(){
   const on = liked.has(current.id);
   $("#vHeart").className = "heart" + (on ? "" : " off");
@@ -643,21 +697,32 @@ $("#upSend").onclick = async () => {
   if(!name){ $("#upMsg").textContent = "이름을 적어 주세요"; return; }
   if(html.length < 20){ $("#upMsg").textContent = mode === "file" ? "HTML 파일을 선택해 주세요" : "코드를 붙여넣어 주세요"; return; }
   if(html.length > MAX_SIZE){ $("#upMsg").textContent = "작품이 너무 커요 (3MB 이하)"; return; }
+  const chat = $("#fChat").value.trim();
+  if(!chat){ $("#upMsg").textContent = "AI 대화기록 링크를 붙여넣어 주세요"; $("#fChat").focus(); return; }
+  if(!/^https?:\/\/\S+$/i.test(chat)){ $("#upMsg").textContent = "대화기록 링크는 https:// 로 시작하는 주소예요"; $("#fChat").focus(); return; }
   const pw = $("#fPw").value;
   if(pw.length < 4){ $("#upMsg").textContent = "수정 비밀번호를 4자 이상 정해 주세요"; return; }
   $("#upSend").disabled = true; $("#upSend").textContent = "올리는 중…";
-  const { data, error } = await sb.rpc("gallery_upload",
-    { p_title: title, p_school: school, p_hakbun: hak.code, p_name: name, p_desc: description, p_html: html, p_pw: pw });
+  const { data, error } = await rpcChat("gallery_upload",
+    { p_title: title, p_school: school, p_hakbun: hak.code, p_name: name, p_desc: description, p_html: html, p_pw: pw }, chat);
   $("#upSend").disabled = false; $("#upSend").textContent = "올리기";
   if(error){ $("#upMsg").textContent = "올리기 실패: " + error.message; return; }
   store.set("vg_me", { school, hak: hak.code, name });
   works.unshift(data); htmlCache.set(data.id, html); store.set(CACHE_KEY, works);
+  if(adminPw) chats.set(data.id, chat);
   sortBy = "new"; document.querySelectorAll("#sort button").forEach(b => b.classList.toggle("on", b.dataset.s === "new"));
   render(); closeModals();
-  $("#fTitle").value = ""; $("#fDesc").value = ""; $("#fCode").value = ""; $("#fPw").value = ""; fileHtml = ""; $("#fFile").value = "";
+  $("#fTitle").value = ""; $("#fDesc").value = ""; $("#fCode").value = ""; $("#fChat").value = ""; $("#fPw").value = ""; fileHtml = ""; $("#fFile").value = "";
   $("#drop").classList.remove("ok"); $("#drop").innerHTML = `여기를 눌러 .html 파일 선택<br><span class="hint">또는 파일을 끌어다 놓기</span>`;
   toast("🎉 작품이 올라갔어요!");
 };
+
+// 대화기록 링크를 함께 보내고, DB가 아직 예전 버전이면 링크 없이 다시 보냄
+async function rpcChat(fn, args, chat){
+  const r = await sb.rpc(fn, { ...args, p_chat_url: chat });
+  if(r.error && (r.error.code === "PGRST202" || /Could not find the function/i.test(r.error.message || ""))) return sb.rpc(fn, args);
+  return r;
+}
 
 // ---------- 내 작품 고치기 ----------
 let edPw = "", edId = null;
@@ -685,6 +750,9 @@ $("#edCheck").onclick = async () => {
   $("#eSchool").disabled = $("#eHak").disabled = !canMove;
   $("#eLockHint").textContent = canMove ? "(선생님만 바꿀 수 있어요)" : "(바꿀 수 없어요)";
   $("#eFile").value = ""; $("#eCode").value = "";
+  $("#eChat").value = "";
+  const ch = await sb.rpc("gallery_get_chat", { p_id: edId, p_pw: pw });
+  $("#eChat").value = (!ch.error && ch.data) || "";
   $("#edStep1").style.display = "none"; $("#edStep2").style.display = "";
 };
 function readText(f){ return new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = no; r.readAsText(f, "utf-8"); }); }
@@ -701,14 +769,17 @@ $("#edSave").onclick = async () => {
   }
   if(html && html.length < 20){ $("#edMsg2").textContent = "코드가 너무 짧아요"; return; }
   if(html.length > MAX_SIZE){ $("#edMsg2").textContent = "작품이 너무 커요 (3MB 이하)"; return; }
+  const chat = $("#eChat").value.trim();
+  if(chat && !/^https?:\/\/\S+$/i.test(chat)){ $("#edMsg2").textContent = "대화기록 링크는 https:// 로 시작하는 주소예요"; return; }
   $("#edSave").disabled = true; $("#edSave").textContent = "저장 중…";
-  const { data, error } = await sb.rpc("gallery_update",
+  const { data, error } = await rpcChat("gallery_update",
     { p_id: edId, p_pw: edPw, p_title: title, p_name: name, p_desc: desc, p_html: html,
-      p_school: $("#eSchool").value, p_hakbun: eHak });
+      p_school: $("#eSchool").value, p_hakbun: eHak }, chat);
   $("#edSave").disabled = false; $("#edSave").textContent = "저장";
   if(error || !data){ $("#edMsg2").textContent = "저장 실패" + (error ? ": " + error.message : " (비밀번호 확인)"); return; }
   const i = works.findIndex(x => x.id === edId);
   works[i] = { ...works[i], ...data };
+  if(adminPw){ chat ? chats.set(edId, chat) : chats.delete(edId); if(works[i].school !== data.school) loadScores(); }
   if(html) htmlCache.set(edId, html); else htmlCache.delete(edId);
   store.set(CACHE_KEY, works); render(); closeModals();
   if(current && current.id === edId) openWorkRefresh(edId);
@@ -718,6 +789,7 @@ async function openWorkRefresh(id){
   const w = works.find(x => x.id === id); current = w;
   $("#vTitle").textContent = w.title; $("#vAuthor").textContent = metaText(w);
   $("#vDesc").textContent = w.description || ""; $("#vDesc").style.display = w.description ? "block" : "none";
+  paintViewerAdmin();
   let html = htmlCache.get(id);
   if(!html){ const { data } = await sb.from("gallery_works").select("html").eq("id", id).single(); html = data?.html || ""; htmlCache.set(id, html); }
   $("#frame").srcdoc = frameDoc(id, html);
@@ -733,25 +805,40 @@ $("#edDel").onclick = async () => {
 
 // ---------- 선생님 모드 ----------
 async function loadScores(){
-  const { data, error } = await sb.rpc("gallery_get_scores", { p_pw: adminPw });
-  if(error){ toast("점수 불러오기 실패"); return; }
-  scores = new Map(data.map(r => [r.work_id, r.score]));
-  render();
+  const [a, s, c] = await Promise.all([
+    sb.rpc("gallery_get_areas", { p_pw: adminPw }),
+    sb.rpc("gallery_get_item_scores", { p_pw: adminPw }),
+    sb.rpc("gallery_get_chats", { p_pw: adminPw })
+  ]);
+  if(a.error || s.error || c.error){ toast("점수표 불러오기 실패"); return; }
+  areas = a.data || {};
+  itemScores = new Map((s.data || []).map(r => [isKey(r.work_id, r.item_id), +r.score]));
+  chats = new Map((c.data || []).map(r => [r.work_id, r.url]));
+  render(); paintViewerAdmin();
 }
-async function setScore(id, s){
-  const prev = scores.get(id), next = prev === s ? null : s;   // 같은 점수 다시 누르면 취소
-  next === null ? scores.delete(id) : scores.set(id, next); render();
-  const { data, error } = await sb.rpc("gallery_set_score", { p_id: id, p_score: next, p_pw: adminPw });
-  if(error || !data){ prev ? scores.set(id, prev) : scores.delete(id); render(); toast("점수 저장 실패"); }
+function paintScores(){ render(); paintViewerAdmin(); }
+async function setItemScore(wid, iid, v){
+  const k = isKey(wid, iid), prev = itemScores.get(k), next = prev === v ? null : v;   // 같은 점수 다시 누르면 취소
+  next === null ? itemScores.delete(k) : itemScores.set(k, next); paintScores();
+  const { data, error } = await sb.rpc("gallery_set_item_score", { p_id: wid, p_item_id: iid, p_score: next, p_pw: adminPw });
+  if(error || !data){
+    prev == null ? itemScores.delete(k) : itemScores.set(k, prev); paintScores();
+    toast("점수 저장 실패" + (error ? ": " + error.message : ""));
+  }
 }
 $("#csvBtn").onclick = () => {
-  const rows = [["학교","학번","학년","반","번호","이름","작품 이름","점수","좋아요","올린 날짜"]];
+  const list = works.filter(w => !schoolFilter || w.school === schoolFilter);
+  const names = [];   // 영역 이름 (학교마다 연결된 영역을 이름으로 모음)
+  list.forEach(w => areasOf(w).forEach(a => { if(!names.includes(a.name)) names.push(a.name); }));
+  const rows = [["학교","학번","학년","반","번호","이름","작품 이름", ...names, "합계", "만점", "대화기록 링크", "좋아요","올린 날짜"]];
   const si = s => { const i = SCHOOLS.indexOf(s); return i < 0 ? 99 : i; };
-  works.filter(w => !schoolFilter || w.school === schoolFilter)
+  list
     .sort((a,b) => si(a.school) - si(b.school) || String(a.hakbun || "9999").localeCompare(String(b.hakbun || "9999")) || a.id - b.id)
     .forEach(w => { const p = parseHak(w.hakbun) || {}; rows.push([
       w.school || "", w.hakbun || "", p.grade ?? "", p.ban ?? "", p.num ?? "", whoOf(w), w.title,
-      scores.get(w.id) ?? "", w.likes, new Date(w.created_at).toLocaleDateString("ko-KR")
+      ...names.map(n => { const a = areasOf(w).find(x => x.name === n); return a ? (itemScores.get(isKey(w.id, a.id)) ?? "") : ""; }),
+      (t => t.filled ? t.sum : "")(workTotal(w)), workTotal(w).max || "", chats.get(w.id) || "",
+      w.likes, new Date(w.created_at).toLocaleDateString("ko-KR")
     ]); });
   const csv = "﻿" + rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(",")).join("\r\n");
   const a = document.createElement("a");
@@ -760,7 +847,7 @@ $("#csvBtn").onclick = () => {
   a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 };
 $("#adminBtn").onclick = () => {
-  if(adminPw){ adminPw = null; scores = new Map(); document.body.classList.remove("admin"); $("#adminBtn").textContent = "🔒"; render(); toast("선생님 모드를 껐어요"); return; }
+  if(adminPw){ adminPw = null; areas = {}; itemScores = new Map(); chats = new Map(); document.body.classList.remove("admin"); $("#adminBtn").textContent = "🔒"; paintScores(); toast("선생님 모드를 껐어요"); return; }
   $("#adMsg").textContent = ""; $("#adPw").value = ""; openModal("#adModal");
 };
 $("#adOn").onclick = async () => {
@@ -768,7 +855,7 @@ $("#adOn").onclick = async () => {
   const { data } = await sb.rpc("gallery_check_pw", { p_pw: pw });
   if(!data){ $("#adMsg").textContent = "비밀번호가 맞지 않아요"; return; }
   adminPw = pw; document.body.classList.add("admin"); $("#adminBtn").textContent = "🔓";
-  closeModals(); toast("선생님 모드 ON — 카드에서 점수를 매길 수 있어요");
+  closeModals(); toast("선생님 모드 ON — 카드나 작품 화면에서 영역별 점수를 매길 수 있어요");
   loadScores();
 };
 $("#adChange").onclick = async () => {
@@ -788,8 +875,9 @@ $("#grid").addEventListener("click", async e => {
     works = works.filter(x => x.id !== id); store.set(CACHE_KEY, works); render(); toast("삭제했어요");
     return;
   }
-  const sb2 = e.target.closest("[data-score]");
-  if(sb2){ e.stopPropagation(); setScore(+sb2.dataset.sid, +sb2.dataset.score); return; }
+  const sb2 = e.target.closest("[data-iscore]");
+  if(sb2){ e.stopPropagation(); setItemScore(+sb2.dataset.sid, +sb2.dataset.iid, +sb2.dataset.iscore); return; }
+  if(e.target.closest("[data-chat]") || e.target.closest(".areas") || e.target.closest(".chat-a")) return;
   const like = e.target.closest("[data-like]");
   if(like){ e.stopPropagation(); toggleLike(+like.dataset.like); return; }
   const card = e.target.closest(".card[data-id]");
