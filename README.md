@@ -4,3 +4,8 @@
 
 - 주소: https://jhong1014.github.io/vibe-gallery/
 - 데이터: Supabase (`gallery_works` 테이블)
+
+## 선생님 모드
+- 카드와 작품 보기 화면에 **수행평가 영역별 점수표**가 나옵니다. 영역은 수행평가관리(jhong1014/pro) → 점수 입력 → "바이브코딩 갤러리 점수 자동 입력"에서 학교와 연결한 채점 요소이고, 고른 점수는 학번이 같은 학생의 수행평가 점수로 자동 입력됩니다.
+- 학생이 올릴 때 받은 **AI 대화기록 링크**(💬)는 선생님 모드와 작품 주인만 볼 수 있습니다.
+- DB 변경: `jhong1014/pro` 의 `supabase/migrations/20261108000000_gallery_area_scores.sql`
